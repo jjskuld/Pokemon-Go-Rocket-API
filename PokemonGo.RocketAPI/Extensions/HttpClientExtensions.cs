@@ -4,11 +4,10 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using PokemonGo.RocketAPI.Exceptions;
 using POGOProtos.Networking.Envelopes;
+using System;
 
 namespace PokemonGo.RocketAPI.Extensions
 {
-    using System;
-
     public enum ApiOperation
     {
         Retry,
@@ -78,6 +77,7 @@ namespace PokemonGo.RocketAPI.Extensions
 
             if (response.Returns.Count == 0)
                 throw new InvalidResponseException();
+
 
             strategy.HandleApiSuccess(requestEnvelope, response);
 

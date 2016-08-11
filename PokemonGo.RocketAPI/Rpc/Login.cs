@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +11,7 @@ using PokemonGo.RocketAPI.Helpers;
 using PokemonGo.RocketAPI.Login;
 using POGOProtos.Networking.Requests;
 using POGOProtos.Networking.Requests.Messages;
+using System.Net;
 
 namespace PokemonGo.RocketAPI.Rpc
 {
@@ -27,12 +28,26 @@ namespace PokemonGo.RocketAPI.Rpc
 
         private static ILoginType SetLoginType(ISettings settings)
         {
+            WebProxy prox = null;
+            if (settings.UseProxy)
+            {
+                NetworkCredential proxyCreds = new NetworkCredential(
+                            settings.ProxyLogin,
+                            settings.ProxyPass
+                        );
+                prox = new WebProxy(settings.ProxyUri)
+                {
+                    UseDefaultCredentials = false,
+                    Credentials = proxyCreds,
+                };
+            }
+
             switch (settings.AuthType)
             {
                 case AuthType.Google:
-                    return new GoogleLogin(settings.GoogleUsername, settings.GooglePassword);
+                    return new GoogleLogin(settings.GoogleUsername, settings.GooglePassword, prox);
                 case AuthType.Ptc:
-                    return new PtcLogin(settings.PtcUsername, settings.PtcPassword);
+                    return new PtcLogin(settings.PtcUsername, settings.PtcPassword, prox);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(settings.AuthType), "Unknown AuthType");
             }

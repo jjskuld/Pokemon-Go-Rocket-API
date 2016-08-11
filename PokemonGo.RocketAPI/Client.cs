@@ -28,10 +28,31 @@ namespace PokemonGo.RocketAPI
         public Rpc.Fort Fort;
         public Rpc.Encounter Encounter;
         public Rpc.Misc Misc;
+        public Random rnd = new Random();
 
         public IApiFailureStrategy ApiFailure { get; set; }
         public ISettings Settings { get; }
         public string AuthToken { get; set; }
+        private IWebProxy proxy
+        {
+            get
+            {
+                if (Settings.UseProxy)
+                {
+                    NetworkCredential proxyCreds = new NetworkCredential(
+                        Settings.ProxyLogin,
+                        Settings.ProxyPass
+                    );
+                    WebProxy prox = new WebProxy(Settings.ProxyUri)
+                    {
+                        UseDefaultCredentials = false,
+                        Credentials = proxyCreds,
+                    };
+                    return prox;
+                }
+                return null;
+            }
+        }
 
         public double CurrentLatitude { get; internal set; }
         public double CurrentLongitude { get; internal set; }
@@ -39,7 +60,13 @@ namespace PokemonGo.RocketAPI
 
         public AuthType AuthType => Settings.AuthType;
 
-        internal readonly PokemonHttpClient PokemonHttpClient = new PokemonHttpClient();
+        internal PokemonHttpClient PokemonHttpClient
+        {
+            get
+            {
+                return new PokemonHttpClient(proxy);
+            }
+        }
         internal string ApiUrl { get; set; }
         internal AuthTicket AuthTicket { get; set; }
 
@@ -47,6 +74,7 @@ namespace PokemonGo.RocketAPI
         {
             Settings = settings;
             ApiFailure = apiFailureStrategy;
+
 
             Login = new Rpc.Login(this);
             Player = new Rpc.Player(this);

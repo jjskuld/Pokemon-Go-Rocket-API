@@ -15,18 +15,19 @@ namespace PokemonGo.RocketAPI.Login
     {
         private readonly string password;
         private readonly string email;
+        private readonly IWebProxy proxy;
 
-        public GoogleLogin(string email, string password)
+        public GoogleLogin(string email, string password, IWebProxy _proxy)
         {
             this.email = email;
             this.password = password;
+            proxy = _proxy;
         }
 
-#pragma warning disable 1998
         public async Task<string> GetAccessToken()
-#pragma warning restore 1998
         {
             var client = new GPSOAuthClient(email, password);
+            
             var response = client.PerformMasterLogin();
 
             if (response.ContainsKey("Error"))
@@ -44,6 +45,8 @@ namespace PokemonGo.RocketAPI.Login
 
             if (!oauthResponse.ContainsKey("Auth"))
                 throw new GoogleOfflineException();
+
+            await Task.Delay(1);
 
             return oauthResponse["Auth"];
         }
