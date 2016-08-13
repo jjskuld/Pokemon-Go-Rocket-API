@@ -1,6 +1,5 @@
 ﻿using Google.Protobuf;
 using PokemonGo.RocketAPI.Enums;
-using POGOProtos.Networking;
 using POGOProtos.Networking.Envelopes;
 using POGOProtos.Networking.Requests;
 using System;
@@ -106,7 +105,7 @@ namespace PokemonGo.RocketAPI.Helpers
                 Latitude = (float)_latitude,
                 Longitude = (float)_longitude,
                 Altitude = (float)_altitude,
-                TimestampSinceStart = (ulong)InternalWatch.ElapsedMilliseconds - 200,
+                TimestampSnapshot = (ulong)InternalWatch.ElapsedMilliseconds - 200,
                 Floor = 3,
                 LocationType = 1
             });
@@ -127,16 +126,20 @@ namespace PokemonGo.RocketAPI.Helpers
             var seed = BitConverter.ToUInt64(x.ComputeHash(_authTicket.ToByteArray()), 0);
             x = new System.Data.HashFunction.xxHash(64, seed);
             foreach (var req in requests)
-                sig.RequestHash.Add(BitConverter.ToUInt64(x.ComputeHash(req.ToByteArray()), 0));
+                sig.RequestHash.Add((long)BitConverter.ToUInt64(x.ComputeHash(req.ToByteArray()), 0));
 
             //static for now
-            sig.Unk22 = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
+            sig.SessionHash = ByteString.CopyFrom(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F);
 
+            sig.Unknown25 = -8537042734809897855;
 
             var val = new Unknown6
             {
                 RequestType = 6,
-                Unknown2 = new Unknown6.Types.Unknown2 { Unknown1 = ByteString.CopyFrom(Encrypt(sig.ToByteArray())) }
+                Unknown2 = new Unknown6.Types.Unknown2
+                {
+                    EncryptedSignature = ByteString.CopyFrom(Encrypt(sig.ToByteArray()))
+                }
             };
             return val;
         }
@@ -223,7 +226,7 @@ namespace PokemonGo.RocketAPI.Helpers
                 Unknown12 = 989 //12
             };
 
-            e.Unknown6.Add(GenerateSignature(customRequests));
+            e.Unknown6 = GenerateSignature(customRequests);
             return e;
         }
 
